@@ -369,9 +369,9 @@ export default function AppPage() {
                             {place.contact}
                           </a>
                         )}
-                        {place.action === 'navigate' && (
+                        {(place.action === 'navigate' || place.directions_url) && (
                           <a 
-                            href={`https://www.google.com/maps/search/${encodeURIComponent(place.name)}`}
+                            href={place.directions_url || `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(place.name)}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="flex items-center gap-1.5 px-4 py-2 rounded-lg border border-border text-sm hover:bg-muted transition-colors"

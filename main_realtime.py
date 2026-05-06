@@ -9,6 +9,16 @@ from pydantic import BaseModel
 from typing import List, Optional, Dict
 import uvicorn
 
+# Import Google Maps Service
+try:
+    from maps_service import GoogleMapsService, get_search_keywords, CATEGORY_KEYWORDS
+    maps_service = GoogleMapsService()
+    GOOGLE_MAPS_ENABLED = True
+except ImportError:
+    print("⚠️ Google Maps Service not available. Using mock data.")
+    GOOGLE_MAPS_ENABLED = False
+    maps_service = None
+
 app = FastAPI(
     title="VibeLocal AI - Real-Time Emergency Intelligence",
     description="Sistem Klasifikasi Darurat Real-Time dengan WebSocket dan GPS",
@@ -130,9 +140,70 @@ def classify_emergency(text: str) -> dict:
     
     return {"type": "general", "urgency": "medium", "category": "general_urgent"}
 
-def get_recommended_places(classification: dict) -> List[dict]:
+def get_recommended_places(classification: dict, lat: float = None, lng: float = None) -> List[dict]:
+    """
+    Get recommended places - Real Google Maps data if available, otherwise fallback
+    """
     emergency_type = classification["type"]
+    category = classification["category"]
     
+    # Try to get real places from Google Maps if coordinates available
+    if GOOGLE_MAPS_ENABLED and maps_service and lat and lng:
+        try:
+            keywords_data = get_search_keywords(category)
+            search_keywords = keywords_data.get("keywords", ["emergency services"])
+            
+            # Search for places using first keyword
+            keyword = search_keywords[0] if search_keywords else "emergency"
+            places = maps_service.search_nearby_places(
+                lat=lat,
+                lng=lng,
+                keyword=keyword,
+                radius=10000,  # 10km radius
+                max_results=5
+            )
+            
+            if places:
+                formatted_places = []
+                for place in places:
+                    # Calculate formatted distance
+                    distance_str = maps_service._format_distance(place.distance_meters)
+                    
+                    # Determine action based on place type
+                    action = "navigate"
+                    if place.types and any(t in ["hospital", "police", "fire_station"] for t in place.types):
+                        action = "call"
+                    
+                    # Check if open 24 hours
+                    open_24h = False
+                    if place.opening_hours:
+                        open_24h = place.opening_hours.get("open_now", False)
+                    
+                    note = f"Rating: {place.rating}/5" if place.rating else "Hubungi untuk info"
+                    if open_24h:
+                        note += " • Buka 24 Jam"
+                    
+                    formatted_places.append({
+                        "name": place.name,
+                        "type": place.types[0].replace("_", " ").title() if place.types else "Tempat",
+                        "distance": distance_str,
+                        "action": action,
+                        "contact": place.phone_number or "",  # Will be populated if available
+                        "note": note,
+                        "place_id": place.place_id,
+                        "lat": place.latitude,
+                        "lng": place.longitude,
+                        "address": place.address
+                    })
+                
+                if formatted_places:
+                    return formatted_places
+                    
+        except Exception as e:
+            print(f"Error getting real places from Google Maps: {e}")
+            # Fall through to default places
+    
+    # Fallback default places (when Google Maps not available or error)
     places_map = {
         "medical": [
             {"name": "RSUD Terdekat / IGD", "type": "Rumah Sakit", "distance": "2.5km", "action": "navigate", "contact": "119", "note": "Segera ke IGD untuk penanganan medis darurat"},
@@ -153,7 +224,7 @@ def get_recommended_places(classification: dict) -> List[dict]:
             {"name": "Basarnas", "type": "SAR", "distance": "Regional", "action": "call", "contact": "115", "note": "Untuk pencarian dan pertolongan besar"}
         ],
         "vehicle": [
-            {"name": "Bengkel 24 Jam Terdekat", "type": "Bengkel", "distance": "2km", "action": "navigate", "contact": "081234567890", "note": "Towing dan perbaikan darurat kendaraan"},
+            {"name": "Bengkel 24 Jam Terdekat", "type": "Bengkel", "distance": "2km", "action": "navigate", "contact": "", "note": "Towing dan perbaikan darurat kendaraan"},
             {"name": "SPBU Terdekat", "type": "Bahan Bakar", "distance": "1km", "action": "navigate", "contact": "1500000", "note": "Jika bensin habis atau accu masalah"}
         ],
         "rescue": [
@@ -242,6 +313,7 @@ async def api_info():
         "docs": "/docs"
     }
 
+@app.post("/api/analyze")
 @app.post("/analyze")
 async def analyze_emergency(input_data: EmergencyInput):
     try:
@@ -249,19 +321,41 @@ async def analyze_emergency(input_data: EmergencyInput):
         classification = classify_emergency(input_data.user_input)
         timestamp = datetime.now().isoformat()
         
+        # Get real places with location if available
+        recommended_places = get_recommended_places(
+            classification, 
+            lat=input_data.lat, 
+            lng=input_data.lng
+        )
+        
+        # Add Google Maps navigation URLs if location available
+        if input_data.lat and input_data.lng and GOOGLE_MAPS_ENABLED:
+            for place in recommended_places:
+                if "place_id" in place and place.get("place_id"):
+                    place["maps_url"] = f"https://www.google.com/maps/search/?api=1&query={place['name'].replace(' ', '+')}"
+                if place.get("lat") and place.get("lng"):
+                    place["directions_url"] = maps_service.get_directions_url(
+                        input_data.lat, 
+                        input_data.lng, 
+                        place["name"],
+                        place["lat"],
+                        place["lng"]
+                    ) if maps_service else None
+        
         response_data = {
             "emergency_id": emergency_id,
             "category": classification["category"],
             "urgency_level": classification["urgency"],
             "summary": get_summary(classification, input_data.user_input),
-            "recommended_places": get_recommended_places(classification),
+            "recommended_places": recommended_places,
             "emergency_action": get_emergency_action(classification),
             "timestamp": timestamp,
             "location": {
                 "lat": input_data.lat,
                 "lng": input_data.lng,
                 "address": input_data.location
-            } if input_data.lat and input_data.lng else None
+            } if input_data.lat and input_data.lng else None,
+            "google_maps_enabled": GOOGLE_MAPS_ENABLED
         }
         
         # Simpan ke active emergencies
@@ -370,6 +464,81 @@ async def get_emergency_numbers():
             {"number": "119", "name": "Kementerian Kesehatan", "category": "medical"}
         ]
     }
+
+# ============ DASHBOARD STATISTICS ============
+
+@app.get("/api/dashboard/stats")
+async def get_dashboard_stats():
+    """Get dashboard statistics for all emergencies"""
+    total_emergencies = len(active_emergencies)
+    
+    # Count by category
+    category_counts = {}
+    status_counts = {"pending": 0, "responding": 0, "resolved": 0}
+    
+    # Location aggregation (by region - approximate)
+    locations = []
+    recent_emergencies = []
+    
+    for emergency_id, data in active_emergencies.items():
+        category = data.get("category", "unknown")
+        status = data.get("status", "pending")
+        
+        category_counts[category] = category_counts.get(category, 0) + 1
+        status_counts[status] = status_counts.get(status, 0) + 1
+        
+        # Location data
+        location = data.get("location")
+        if location and location.get("lat") and location.get("lng"):
+            locations.append({
+                "lat": location["lat"],
+                "lng": location["lng"],
+                "emergency_id": emergency_id,
+                "category": category,
+                "status": status
+            })
+        
+        # Recent emergencies (last 10)
+        recent_emergencies.append({
+            "emergency_id": emergency_id,
+            "category": category,
+            "urgency": data.get("urgency_level"),
+            "status": status,
+            "timestamp": data.get("timestamp"),
+            "location": location
+        })
+    
+    # Sort by timestamp (newest first)
+    recent_emergencies.sort(key=lambda x: x.get("timestamp", ""), reverse=True)
+    recent_emergencies = recent_emergencies[:10]  # Only last 10
+    
+    return {
+        "total_emergencies": total_emergencies,
+        "by_category": category_counts,
+        "by_status": status_counts,
+        "active_locations": locations,
+        "recent_emergencies": recent_emergencies,
+        "google_maps_enabled": GOOGLE_MAPS_ENABLED
+    }
+
+@app.get("/api/dashboard/locations")
+async def get_all_locations():
+    """Get all emergency locations for map display"""
+    locations = []
+    for emergency_id, data in active_emergencies.items():
+        location = data.get("location")
+        if location and location.get("lat") and location.get("lng"):
+            locations.append({
+                "id": emergency_id,
+                "lat": location["lat"],
+                "lng": location["lng"],
+                "category": data.get("category"),
+                "urgency": data.get("urgency_level"),
+                "status": data.get("status"),
+                "timestamp": data.get("timestamp"),
+                "summary": data.get("summary", "")[:100] + "..." if len(data.get("summary", "")) > 100 else data.get("summary", "")
+            })
+    return {"locations": locations, "count": len(locations)}
 
 # ============ WEBSOCKET ============
 

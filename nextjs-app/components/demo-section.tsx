@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Send, MapPin, Phone, MessageCircle, Navigation, Clock, CheckCircle2, AlertCircle } from 'lucide-react'
-import { analyzeEmergency, EmergencyResponse, EmergencyInput } from './api-client'
+import { analyzeEmergency, EmergencyResponse, EmergencyInput, Place } from './api-client'
 
 const exampleInputs = [
   'Aku pusing banget di kos',
@@ -269,9 +269,9 @@ export function DemoSection() {
                                 {place.contact}
                               </a>
                             )}
-                            {place.action === 'navigate' && (
+                            {(place.action === 'navigate' || place.directions_url) && (
                               <a 
-                                href={`https://www.google.com/maps/search/${encodeURIComponent(place.name)}`}
+                                href={place.directions_url || `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(place.name)}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border text-xs hover:bg-muted transition-colors"

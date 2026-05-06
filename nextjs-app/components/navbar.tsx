@@ -44,6 +44,9 @@ export function Navbar() {
             <Link href="/app" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
               App
             </Link>
+            <Link href="/dashboard" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+              Dashboard
+            </Link>
           </div>
 
           {/* Actions */}
@@ -90,6 +93,9 @@ export function Navbar() {
               </Link>
               <Link href="/app" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
                 App
+              </Link>
+              <Link href="/dashboard" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                Dashboard
               </Link>
               <Link
                 href="/app"

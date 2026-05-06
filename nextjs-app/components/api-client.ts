@@ -11,19 +11,27 @@ export interface EmergencyInput {
   lng?: number
 }
 
+export interface Place {
+  name: string
+  type: string
+  distance: string
+  action: string
+  contact: string
+  note: string
+  place_id?: string
+  lat?: number
+  lng?: number
+  address?: string
+  maps_url?: string
+  directions_url?: string
+}
+
 export interface EmergencyResponse {
   emergency_id: string
   category: string
   urgency_level: string
   summary: string
-  recommended_places: Array<{
-    name: string
-    type: string
-    distance: string
-    action: string
-    contact: string
-    note: string
-  }>
+  recommended_places: Place[]
   emergency_action: {
     suggested_step: string
     call_to_action: string
@@ -35,6 +43,7 @@ export interface EmergencyResponse {
     lng: number
     address?: string
   }
+  google_maps_enabled?: boolean
 }
 
 export async function analyzeEmergency(input: EmergencyInput): Promise<EmergencyResponse> {
@@ -88,4 +97,21 @@ export async function sendChatMessage(emergencyId: string, message: string, send
 export function createWebSocket(clientId: string): WebSocket {
   const wsUrl = `${API_BASE.replace('http', 'ws')}/ws/${clientId}`
   return new WebSocket(wsUrl)
+}
+
+// Dashboard API
+export async function getDashboardStats() {
+  const response = await fetch(`${API_BASE}/api/dashboard/stats`)
+  if (!response.ok) {
+    throw new Error('Failed to fetch dashboard stats')
+  }
+  return response.json()
+}
+
+export async function getAllLocations() {
+  const response = await fetch(`${API_BASE}/api/dashboard/locations`)
+  if (!response.ok) {
+    throw new Error('Failed to fetch locations')
+  }
+  return response.json()
 }
