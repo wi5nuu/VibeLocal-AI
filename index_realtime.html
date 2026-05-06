@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VibeLocal AI - Real-Time Emergency</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #4338ca 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container { max-width: 900px; margin: 0 auto; }
+        .header { text-align: center; color: white; margin-bottom: 30px; }
+        .header h1 { font-size: 2.5rem; margin-bottom: 10px; }
+        .header p { opacity: 0.9; }
+        .status-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255,255,255,0.2);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            margin-top: 12px;
+        }
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #ef4444;
+            animation: pulse 1.5s infinite;
+        }
+        .status-dot.connected { background: #22c55e; }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 20px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+        }
+        .input-group { margin-bottom: 16px; }
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+        .input-group input, .input-group textarea {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        .input-group input:focus, .input-group textarea:focus {
+            outline: none;
+            border-color: #4338ca;
+        }
+        .btn {
+            background: linear-gradient(135deg, #4338ca 0%, #7c3aed 100%);
+            color: white;
+            border: none;
+            padding: 16px 32px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(67, 56, 202, 0.4); }
+        .btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+        .btn-success { background: linear-gradient(135deg, #16a34a 0%, #22c55e 100%); }
+        .btn-danger { background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%); }
+        .badge {
+            display: inline-block;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        .badge-high { background: #fee2e2; color: #dc2626; }
+        .badge-medium { background: #ffedd5; color: #ea580c; }
+        .badge-low { background: #dcfce7; color: #16a34a; }
+        .place-card {
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+            border-left: 4px solid #4338ca;
+        }
+        .place-card h4 { margin-bottom: 8px; color: #1e293b; }
+        .place-meta {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+        .meta-tag {
+            background: white;
+            padding: 4px 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            color: #64748b;
+        }
+        .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+        .action-btn {
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .btn-call { background: #dcfce7; color: #16a34a; }
+        .btn-whatsapp { background: #d1fae5; color: #059669; }
+        .btn-navigate { background: #dbeafe; color: #2563eb; }
+        .response-section { display: none; }
+        .response-section.visible { display: block; }
+        .loading {
+            text-align: center;
+            color: #4338ca;
+        }
+        .spinner {
+            display: inline-block;
+            width: 32px;
+            height: 32px;
+            border: 3px solid #e0e0e0;
+            border-top-color: #4338ca;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .emergency-numbers {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 10px;
+        }
+        .emergency-item {
+            background: #fef2f2;
+            border: 2px solid #fecaca;
+            border-radius: 12px;
+            padding: 12px 8px;
+            text-align: center;
+        }
+        .emergency-item .number { font-size: 22px; font-weight: 800; color: #dc2626; }
+        .emergency-item .name { font-size: 11px; color: #7f1d1d; }
+        .examples {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            margin-top: 12px;
+        }
+        .example-chip {
+            background: #f1f5f9;
+            border: 1px solid #e2e8f0;
+            padding: 10px 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+        }
+        .example-chip:hover { background: #e0e7ff; border-color: #4338ca; }
+
+        /* REAL-TIME FEATURES */
+        .realtime-panel {
+            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+            color: white;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .realtime-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        .live-badge {
+            background: #ef4444;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 700;
+            animation: blink 1s infinite;
+        }
+        @keyframes blink { 0%, 50% { opacity: 1; } 51%, 100% { opacity: 0.3; } }
+        .gps-info {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        .gps-stat {
+            background: rgba(255,255,255,0.1);
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .gps-stat .value { font-size: 20px; font-weight: 700; color: #60a5fa; }
+        .gps-stat .label { font-size: 12px; color: #94a3b8; }
+        .chat-container {
+            background: white;
+            border-radius: 12px;
+            height: 250px;
+            overflow-y: auto;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .chat-message {
+            max-width: 80%;
+            padding: 10px 14px;
+            border-radius: 12px;
+            font-size: 14px;
+        }
+        .chat-message.user {
+            align-self: flex-end;
+            background: #4338ca;
+            color: white;
+        }
+        .chat-message.responder {
+            align-self: flex-start;
+            background: #f1f5f9;
+            color: #334155;
+        }
+        .chat-input-group {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+        }
+        .chat-input-group input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 14px;
+        }
+        .chat-input-group input:focus { outline: none; border-color: #4338ca; }
+        .chat-btn {
+            background: #4338ca;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .location-map {
+            background: #1e293b;
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+            color: #94a3b8;
+        }
+        .map-placeholder {
+            height: 150px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .emergency-id-display {
+            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+            color: #1e1b4b;
+            padding: 16px;
+            border-radius: 12px;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 16px;
+            font-family: monospace;
+            font-size: 18px;
+        }
+        .tracking-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px;
+            background: rgba(34, 197, 94, 0.2);
+            border-radius: 8px;
+            margin-top: 12px;
+        }
+        .tracking-status.active { background: rgba(34, 197, 94, 0.2); color: #4ade80; }
+        .tracking-status.inactive { background: rgba(239, 68, 68, 0.2); color: #f87171; }
+        .hidden { display: none !important; }
+        @keyframes typing {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+        .typing-dots {
+            animation: typing 1s infinite;
+        }
+        .eta-countdown {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 10px;
+            font-weight: 700;
+            text-align: center;
+            margin: 10px 0;
+            animation: pulse 2s infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚨 VibeLocal AI</h1>
+            <p>Real-Time Emergency Intelligence System</p>
+            <div class="status-indicator">
+                <span class="status-dot" id="wsStatus"></span>
+                <span id="wsStatusText">Connecting...</span>
+            </div>
+        </div>
+
+        <!-- REAL-TIME PANEL -->
+        <div class="realtime-panel hidden" id="realtimePanel">
+            <div class="realtime-header">
+                <span class="live-badge">● LIVE</span>
+                <span>Real-Time Emergency Tracking</span>
+            </div>
+            
+            <div class="emergency-id-display" id="emergencyIdDisplay">
+                Waiting for emergency...
+            </div>
+
+            <div class="gps-info">
+                <div class="gps-stat">
+                    <div class="value" id="latDisplay">--</div>
+                    <div class="label">Latitude</div>
+                </div>
+                <div class="gps-stat">
+                    <div class="value" id="lngDisplay">--</div>
+                    <div class="label">Longitude</div>
+                </div>
+            </div>
+
+            <div class="tracking-status inactive" id="gpsStatus">
+                <span>📍</span>
+                <span id="gpsStatusText">GPS tracking inactive - Click "Start Tracking"</span>
+            </div>
+
+            <button class="btn btn-success" id="startTrackingBtn" onclick="startGPSTracking()">
+                📡 Start GPS Tracking
+            </button>
+            <button class="btn btn-danger hidden" id="stopTrackingBtn" onclick="stopGPSTracking()">
+                ⏹️ Stop Tracking
+            </button>
+
+            <div class="eta-countdown hidden" id="etaDisplay">
+                🚑 ETA: <span id="etaTimer">08:00</span> menit
+            </div>
+
+            <div style="margin-top: 20px;">
+                <h4 style="margin-bottom: 12px;">💬 Live Chat with Emergency Responder</h4>
+                <div class="chat-container" id="chatContainer">
+                    <div style="text-align: center; color: #94a3b8; padding: 40px;">
+                        Chat will appear here when connected...
+                    </div>
+                </div>
+                <div class="chat-input-group">
+                    <input type="text" id="chatInput" placeholder="Type your message..." disabled>
+                    <button class="chat-btn" id="sendChatBtn" onclick="sendChatMessage()" disabled>
+                        Send
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- INPUT FORM -->
+        <div class="card" id="inputCard">
+            <h2 style="margin-bottom: 16px;">📍 Laporkan Situasi Darurat</h2>
+            <div class="input-group">
+                <label>Jelaskan situasi darurat Anda:</label>
+                <textarea id="userInput" rows="3" placeholder="Contoh: Motor mogok di jalan raya..."></textarea>
+            </div>
+            <div class="examples">
+                <div class="example-chip" onclick="setExample('Saya sakit perut parah dan muntah-muntah')">🤒 Sakit perut</div>
+                <div class="example-chip" onclick="setExample('Motor mogok di tengah jalan tol')">🛵 Motor mogok</div>
+                <div class="example-chip" onclick="setExample('Ada kebakaran di rumah tetangga')">🔥 Kebakaran</div>
+                <div class="example-chip" onclick="setExample('Ada yang mau begal saya di jalanan')">🚔 Begal</div>
+            </div>
+            <div class="input-group" style="margin-top: 16px;">
+                <label>Lokasi (opsional):</label>
+                <input type="text" id="locationInput" placeholder="Jl. Sudirman, Jakarta">
+            </div>
+            <button class="btn" id="submitBtn" onclick="submitEmergency()">
+                🚨 Submit Emergency & Connect
+            </button>
+            <div id="loading" class="loading" style="display: none; margin-top: 16px;">
+                <div class="spinner"></div>
+                <p>Connecting to emergency system...</p>
+            </div>
+        </div>
+
+        <!-- ANALYSIS RESULT -->
+        <div id="responseSection" class="card response-section">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <h2>📋 Hasil Analisis</h2>
+                <span id="urgencyBadge" class="badge"></span>
+            </div>
+            <p id="summary" style="margin-bottom: 20px; line-height: 1.6;"></p>
+            <h3 style="margin-bottom: 12px;">🏥 Tempat Bantuan Terdekat:</h3>
+            <div id="placesList"></div>
+            <div style="background: #fef3c7; border-radius: 12px; padding: 16px; margin-top: 20px;">
+                <h3 style="margin-bottom: 8px; color: #92400e;">⚡ Langkah Segera:</h3>
+                <p id="suggestedStep" style="color: #78350f; margin-bottom: 12px;"></p>
+                <p id="callToAction" style="color: #92400e; font-weight: 600;"></p>
+            </div>
+        </div>
+
+        <!-- EMERGENCY NUMBERS -->
+        <div class="card">
+            <h2 style="margin-bottom: 16px;">📞 Nomor Darurat Indonesia</h2>
+            <div class="emergency-numbers">
+                <div class="emergency-item">
+                    <div class="number">112</div>
+                    <div class="name">Terpadu</div>
+                </div>
+                <div class="emergency-item">
+                    <div class="number">110</div>
+                    <div class="name">Polisi</div>
+                </div>
+                <div class="emergency-item">
+                    <div class="number">113</div>
+                    <div class="name">Damkar</div>
+                </div>
+                <div class="emergency-item">
+                    <div class="number">115</div>
+                    <div class="name">Basarnas</div>
+                </div>
+                <div class="emergency-item">
+                    <div class="number">118</div>
+                    <div class="name">Ambulans</div>
+                </div>
+                <div class="emergency-item">
+                    <div class="number">119</div>
+                    <div class="name">Kemenkes</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card" style="text-align: center; color: #64748b;">
+            <p style="font-size: 14px;">
+                🇮🇩 Dibuat untuk <strong>#JuaraVibeCoding</strong><br>
+                Real-Time Features: WebSocket • GPS Tracking • Live Chat
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // CONFIG
+        const API_URL = window.location.origin.includes('localhost')
+            ? 'http://localhost:8000'
+            : window.location.origin;
+        const WS_URL = API_URL.replace('http', 'ws') + '/ws/client-' + Math.random().toString(36).substr(2, 9);
+
+        // STATE
+        let ws = null;
+        let currentEmergencyId = null;
+        let gpsWatchId = null;
+        let lastLocation = null;
+        let chatHistory = [];
+
+        // Initialize WebSocket
+        function connectWebSocket() {
+            ws = new WebSocket(WS_URL);
+            
+            ws.onopen = () => {
+                updateConnectionStatus(true);
+                console.log('WebSocket connected');
+                
+                // Subscribe to emergency if exists
+                if (currentEmergencyId) {
+                    ws.send(JSON.stringify({
+                        type: 'subscribe_emergency',
+                        emergency_id: currentEmergencyId
+                    }));
+                }
+            };
+            
+            ws.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                handleWebSocketMessage(data);
+            };
+            
+            ws.onclose = () => {
+                updateConnectionStatus(false);
+                // Reconnect after 3 seconds
+                setTimeout(connectWebSocket, 3000);
+            };
+            
+            ws.onerror = (error) => {
+                console.error('WebSocket error:', error);
+            };
+        }
+
+        function updateConnectionStatus(connected) {
+            const dot = document.getElementById('wsStatus');
+            const text = document.getElementById('wsStatusText');
+            
+            if (connected) {
+                dot.classList.add('connected');
+                text.textContent = 'Real-time connected';
+            } else {
+                dot.classList.remove('connected');
+                text.textContent = 'Reconnecting...';
+            }
+        }
+
+        function handleWebSocketMessage(data) {
+            console.log('WS Message:', data);
+            
+            switch(data.type) {
+                case 'location_update':
+                    if (data.emergency_id === currentEmergencyId) {
+                        updateLocationDisplay(data.location);
+                    }
+                    break;
+                    
+                case 'new_message':
+                    if (data.emergency_id === currentEmergencyId) {
+                        addChatMessage(data.message);
+                    }
+                    break;
+                    
+                case 'emergency_data':
+                    console.log('Emergency data received:', data.data);
+                    break;
+                    
+                case 'pong':
+                    // Keepalive response
+                    break;
+            }
+        }
+
+        // GPS TRACKING
+        function startGPSTracking() {
+            if (!navigator.geolocation) {
+                alert('GPS tidak didukung di browser Anda');
+                return;
+            }
+
+            document.getElementById('startTrackingBtn').classList.add('hidden');
+            document.getElementById('stopTrackingBtn').classList.remove('hidden');
+            
+            const statusDiv = document.getElementById('gpsStatus');
+            const statusText = document.getElementById('gpsStatusText');
+            statusDiv.classList.remove('inactive');
+            statusDiv.classList.add('active');
+            statusText.textContent = 'GPS tracking ACTIVE - Location broadcasting';
+
+            gpsWatchId = navigator.geolocation.watchPosition(
+                (position) => {
+                    const lat = position.coords.latitude;
+                    const lng = position.coords.longitude;
+                    const accuracy = position.coords.accuracy;
+                    
+                    lastLocation = { lat, lng, accuracy };
+                    
+                    // Update display
+                    document.getElementById('latDisplay').textContent = lat.toFixed(6);
+                    document.getElementById('lngDisplay').textContent = lng.toFixed(6);
+                    
+                    // Send via WebSocket
+                    if (ws && ws.readyState === WebSocket.OPEN && currentEmergencyId) {
+                        ws.send(JSON.stringify({
+                            type: 'location_update',
+                            emergency_id: currentEmergencyId,
+                            lat: lat,
+                            lng: lng
+                        }));
+                    }
+                    
+                    // Also send via HTTP as backup
+                    fetch(`${API_URL}/location/update`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            emergency_id: currentEmergencyId,
+                            lat: lat,
+                            lng: lng,
+                            accuracy: accuracy
+                        })
+                    }).catch(() => {});
+                },
+                (error) => {
+                    console.error('GPS Error:', error);
+                    alert('Gagal mendapatkan lokasi: ' + error.message);
+                },
+                { enableHighAccuracy: true, timeout: 10000, maximumAge: 5000 }
+            );
+        }
+
+        function stopGPSTracking() {
+            if (gpsWatchId !== null) {
+                navigator.geolocation.clearWatch(gpsWatchId);
+                gpsWatchId = null;
+            }
+            
+            document.getElementById('startTrackingBtn').classList.remove('hidden');
+            document.getElementById('stopTrackingBtn').classList.add('hidden');
+            
+            const statusDiv = document.getElementById('gpsStatus');
+            const statusText = document.getElementById('gpsStatusText');
+            statusDiv.classList.remove('active');
+            statusDiv.classList.add('inactive');
+            statusText.textContent = 'GPS tracking stopped';
+        }
+
+        function updateLocationDisplay(location) {
+            document.getElementById('latDisplay').textContent = location.lat.toFixed(6);
+            document.getElementById('lngDisplay').textContent = location.lng.toFixed(6);
+        }
+
+        // CHAT
+        function sendChatMessage() {
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+            
+            if (!message || !currentEmergencyId) return;
+            
+            const msgData = {
+                sender: 'user',
+                message: message,
+                timestamp: new Date().toISOString()
+            };
+            
+            // Add to UI
+            addChatMessage(msgData);
+            input.value = '';
+            
+            // Send via WebSocket
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({
+                    type: 'chat_message',
+                    emergency_id: currentEmergencyId,
+                    sender: 'user',
+                    message: message
+                }));
+            }
+            
+            // Send via HTTP as backup
+            fetch(`${API_URL}/emergency/${currentEmergencyId}/chat`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    emergency_id: currentEmergencyId,
+                    sender: 'user',
+                    message: message
+                })
+            }).catch(() => {});
+            
+            // Simulate responder reply with typing indicator
+            showTypingIndicator();
+            setTimeout(() => {
+                hideTypingIndicator();
+                const autoReply = {
+                    sender: 'responder',
+                    message: 'Pesan diterima. Tim bantuan sedang menuju lokasi Anda. ETA: 8 menit. Tetap tenang! 🚑',
+                    timestamp: new Date().toISOString()
+                };
+                addChatMessage(autoReply);
+            }, 2500);
+        }
+
+        function showTypingIndicator() {
+            const container = document.getElementById('chatContainer');
+            const typingDiv = document.createElement('div');
+            typingDiv.id = 'typingIndicator';
+            typingDiv.className = 'chat-message responder';
+            typingDiv.style.opacity = '0.7';
+            typingDiv.innerHTML = 'Mengetik <span class="typing-dots">...</span>';
+            container.appendChild(typingDiv);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function hideTypingIndicator() {
+            const typingDiv = document.getElementById('typingIndicator');
+            if (typingDiv) typingDiv.remove();
+        }
+
+        function addChatMessage(msgData) {
+            const container = document.getElementById('chatContainer');
+            
+            // Remove placeholder if exists
+            if (container.children.length === 1 && container.children[0].textContent.includes('appear here')) {
+                container.innerHTML = '';
+            }
+            
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `chat-message ${msgData.sender}`;
+            
+            const time = new Date(msgData.timestamp).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+            msgDiv.innerHTML = `
+                <div>${msgData.message}</div>
+                <div style="font-size: 11px; opacity: 0.7; margin-top: 4px;">${time}</div>
+            `;
+            
+            container.appendChild(msgDiv);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        // EMERGENCY SUBMISSION
+        function setExample(text) {
+            document.getElementById('userInput').value = text;
+        }
+
+        async function submitEmergency() {
+            const input = document.getElementById('userInput').value.trim();
+            const location = document.getElementById('locationInput').value.trim();
+            
+            if (!input) {
+                alert('Silakan jelaskan situasi darurat Anda');
+                return;
+            }
+
+            const btn = document.getElementById('submitBtn');
+            const loading = document.getElementById('loading');
+
+            btn.disabled = true;
+            loading.style.display = 'block';
+
+            // Get GPS if available
+            let lat = null, lng = null;
+            if (navigator.geolocation) {
+                try {
+                    const position = await new Promise((resolve, reject) => {
+                        navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 5000 });
+                    });
+                    lat = position.coords.latitude;
+                    lng = position.coords.longitude;
+                } catch(e) {}
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/analyze`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        user_input: input, 
+                        location: location,
+                        lat: lat,
+                        lng: lng
+                    })
+                });
+
+                const data = await response.json();
+                currentEmergencyId = data.emergency_id;
+                
+                // Show realtime panel
+                document.getElementById('realtimePanel').classList.remove('hidden');
+                document.getElementById('emergencyIdDisplay').textContent = `EMERGENCY ID: ${currentEmergencyId}`;
+                
+                // Enable chat
+                document.getElementById('chatInput').disabled = false;
+                document.getElementById('sendChatBtn').disabled = false;
+                
+                // Add welcome message
+                setTimeout(() => {
+                    const welcomeMsg = {
+                        sender: 'responder',
+                        message: `🚨 Emergency ID ${currentEmergencyId} aktif! Tim responder telah diberitahu. Mohon tetap di lokasi dan aktifkan GPS tracking.`,
+                        timestamp: new Date().toISOString()
+                    };
+                    addChatMessage(welcomeMsg);
+                }, 1000);
+                
+                // Subscribe to this emergency via WebSocket
+                if (ws && ws.readyState === WebSocket.OPEN) {
+                    ws.send(JSON.stringify({
+                        type: 'subscribe_emergency',
+                        emergency_id: currentEmergencyId
+                    }));
+                }
+                
+                displayResponse(data);
+                
+                // Show and start ETA countdown
+                document.getElementById('etaDisplay').classList.remove('hidden');
+                startETACountdown(8 * 60); // 8 minutes in seconds
+                
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Gagal mengirim. Pastikan server berjalan di port 8000.');
+            } finally {
+                btn.disabled = false;
+                loading.style.display = 'none';
+            }
+        }
+
+        let etaInterval;
+        function startETACountdown(seconds) {
+            let remaining = seconds;
+            const timerSpan = document.getElementById('etaTimer');
+            
+            if (etaInterval) clearInterval(etaInterval);
+            
+            etaInterval = setInterval(() => {
+                remaining--;
+                if (remaining <= 0) {
+                    clearInterval(etaInterval);
+                    timerSpan.textContent = '00:00 - Tiba!';
+                    return;
+                }
+                
+                const mins = Math.floor(remaining / 60);
+                const secs = remaining % 60;
+                timerSpan.textContent = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+            }, 1000);
+        }
+
+        function displayResponse(data) {
+            const responseSection = document.getElementById('responseSection');
+            const urgencyBadge = document.getElementById('urgencyBadge');
+            const summary = document.getElementById('summary');
+            const placesList = document.getElementById('placesList');
+            const suggestedStep = document.getElementById('suggestedStep');
+            const callToAction = document.getElementById('callToAction');
+
+            urgencyBadge.className = `badge badge-${data.urgency_level}`;
+            urgencyBadge.textContent = data.urgency_level;
+            summary.textContent = data.summary;
+
+            placesList.innerHTML = data.recommended_places.map(place => `
+                <div class="place-card">
+                    <h4>${place.name}</h4>
+                    <div class="place-meta">
+                        <span class="meta-tag">${place.type}</span>
+                        <span class="meta-tag">📍 ${place.distance}</span>
+                    </div>
+                    <div class="actions">
+                        ${place.contact ? `
+                            <a href="tel:${place.contact}" class="action-btn btn-call">
+                                📞 ${place.contact}
+                            </a>
+                        ` : ''}
+                        ${place.action === 'navigate' ? `
+                            <a href="https://www.google.com/maps/search/${encodeURIComponent(place.name + ' ' + (data.location?.address || ''))}" class="action-btn btn-navigate" target="_blank">
+                                🗺️ Navigasi
+                            </a>
+                        ` : ''}
+                    </div>
+                    <p style="margin-top: 12px; font-size: 13px; color: #64748b;">${place.note}</p>
+                </div>
+            `).join('');
+
+            suggestedStep.textContent = data.emergency_action.suggested_step;
+            callToAction.textContent = data.emergency_action.call_to_action;
+
+            responseSection.classList.add('visible');
+        }
+
+        // Keepalive ping
+        setInterval(() => {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({ type: 'ping' }));
+            }
+        }, 30000);
+
+        // Init
+        connectWebSocket();
+
+        // Enter key handlers
+        document.getElementById('userInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                submitEmergency();
+            }
+        });
+        
+        document.getElementById('chatInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                sendChatMessage();
+            }
+        });
+    </script>
+</body>
+</html>

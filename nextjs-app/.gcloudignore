@@ -1,0 +1,36 @@
+# This file specifies files that are *not* uploaded to Google Cloud Platform
+.gcloudignore
+.git
+.gitignore
+
+# Node.js dependencies (will be installed during build)
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Next.js build output (will be generated during build)
+.next/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Testing
+coverage/
+.nyc_output/
+
+# Environment files (should use Cloud Run env vars instead)
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+logs/

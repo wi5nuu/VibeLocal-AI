@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VibeLocal AI - Emergency Intelligence</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+        .header h1 { font-size: 2.5rem; margin-bottom: 10px; }
+        .header p { opacity: 0.9; }
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        .input-group {
+            margin-bottom: 16px;
+        }
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+        .input-group input, .input-group textarea {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        .input-group input:focus, .input-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 14px 32px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .urgency-high { color: #dc2626; }
+        .urgency-medium { color: #ea580c; }
+        .urgency-low { color: #16a34a; }
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .badge-high { background: #fee2e2; color: #dc2626; }
+        .badge-medium { background: #ffedd5; color: #ea580c; }
+        .badge-low { background: #dcfce7; color: #16a34a; }
+        .place-card {
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+            border-left: 4px solid #667eea;
+        }
+        .place-card h4 { margin-bottom: 8px; color: #1e293b; }
+        .place-meta {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+        .meta-tag {
+            background: white;
+            padding: 4px 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            color: #64748b;
+        }
+        .actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .action-btn {
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .btn-call { background: #dcfce7; color: #16a34a; }
+        .btn-whatsapp { background: #d1fae5; color: #059669; }
+        .btn-navigate { background: #dbeafe; color: #2563eb; }
+        .response-section {
+            display: none;
+        }
+        .response-section.visible {
+            display: block;
+        }
+        .loading {
+            text-align: center;
+            color: #667eea;
+        }
+        .spinner {
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            border: 3px solid #e0e0e0;
+            border-top-color: #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .emergency-numbers {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 12px;
+        }
+        .emergency-item {
+            background: #fef2f2;
+            border: 2px solid #fecaca;
+            border-radius: 12px;
+            padding: 12px;
+            text-align: center;
+        }
+        .emergency-item .number {
+            font-size: 24px;
+            font-weight: 800;
+            color: #dc2626;
+        }
+        .emergency-item .name {
+            font-size: 12px;
+            color: #7f1d1d;
+        }
+        .examples {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 8px;
+            margin-top: 12px;
+        }
+        .example-chip {
+            background: #f1f5f9;
+            border: 1px solid #e2e8f0;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .example-chip:hover {
+            background: #e0e7ff;
+            border-color: #667eea;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚨 VibeLocal AI</h1>
+            <p>Sistem Klasifikasi Darurat Lokal Indonesia</p>
+        </div>
+
+        <div class="card">
+            <h2 style="margin-bottom: 16px;">📍 Laporkan Situasi</h2>
+            <div class="input-group">
+                <label>Jelaskan situasi darurat Anda:</label>
+                <textarea id="userInput" rows="3" placeholder="Contoh: Motor mogok di jalan raya..."></textarea>
+            </div>
+            <div class="examples">
+                <div class="example-chip" onclick="setExample('Saya sakit perut parah dan muntah-muntah')">🤒 Sakit perut</div>
+                <div class="example-chip" onclick="setExample('Motor mogok di tengah jalan tol')">🛵 Motor mogok</div>
+                <div class="example-chip" onclick="setExample('Ada kebakaran di rumah tetangga')">🔥 Kebakaran</div>
+                <div class="example-chip" onclick="setExample('Ada yang mau begal saya di jalanan')">🚔 Begal</div>
+            </div>
+            <div class="input-group" style="margin-top: 16px;">
+                <label>Lokasi (opsional):</label>
+                <input type="text" id="location" placeholder="Jl. Sudirman, Jakarta">
+            </div>
+            <button class="btn" id="submitBtn" onclick="analyzeEmergency()">
+                🔍 Analisis Situasi
+            </button>
+            <div id="loading" class="loading" style="display: none; margin-top: 16px;">
+                <div class="spinner"></div>
+                <p>Menganalisis situasi...</p>
+            </div>
+        </div>
+
+        <div id="responseSection" class="card response-section">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <h2>📋 Hasil Analisis</h2>
+                <span id="urgencyBadge" class="badge"></span>
+            </div>
+            
+            <p id="summary" style="margin-bottom: 20px; line-height: 1.6;"></p>
+            
+            <h3 style="margin-bottom: 12px;">🏥 Tempat Bantuan Terdekat:</h3>
+            <div id="placesList"></div>
+
+            <div style="background: #fef3c7; border-radius: 12px; padding: 16px; margin-top: 20px;">
+                <h3 style="margin-bottom: 8px; color: #92400e;">⚡ Langkah Segera:</h3>
+                <p id="suggestedStep" style="color: #78350f; margin-bottom: 12px;"></p>
+                <p id="callToAction" style="color: #92400e; font-weight: 600;"></p>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2 style="margin-bottom: 16px;">📞 Nomor Darurat Indonesia</h2>
+            <div class="emergency-numbers">
+                <div class="emergency-item">
+                    <div class="number">112</div>
+                    <div class="name">Terpadu</div>
+                </div>
+                <div class="emergency-item">
+                    <div class="number">110</div>
+                    <div class="name">Polisi</div>
+                </div>
+                <div class="emergency-item">
+                    <div class="number">113</div>
+                    <div class="name">Damkar</div>
+                </div>
+                <div class="emergency-item">
+                    <div class="number">115</div>
+                    <div class="name">Basarnas</div>
+                </div>
+                <div class="emergency-item">
+                    <div class="number">118</div>
+                    <div class="name">Ambulans</div>
+                </div>
+                <div class="emergency-item">
+                    <div class="number">119</div>
+                    <div class="name">Kemenkes</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card" style="text-align: center; color: #64748b;">
+            <p style="font-size: 14px;">
+                🇮🇩 Dibuat untuk <strong>#JuaraVibeCoding</strong><br>
+                Powered by Google Cloud Run
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // API URL - akan otomatis detect di Cloud Run atau local
+        const API_URL = window.location.origin.includes('localhost') 
+            ? 'http://localhost:8080' 
+            : window.location.origin;
+
+        function setExample(text) {
+            document.getElementById('userInput').value = text;
+        }
+
+        async function analyzeEmergency() {
+            const input = document.getElementById('userInput').value.trim();
+            const location = document.getElementById('location').value.trim();
+            
+            if (!input) {
+                alert('Silakan jelaskan situasi darurat Anda');
+                return;
+            }
+
+            const btn = document.getElementById('submitBtn');
+            const loading = document.getElementById('loading');
+            const responseSection = document.getElementById('responseSection');
+
+            btn.disabled = true;
+            loading.style.display = 'block';
+            responseSection.classList.remove('visible');
+
+            try {
+                const response = await fetch(`${API_URL}/analyze`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_input: input, location: location })
+                });
+
+                const data = await response.json();
+                displayResponse(data);
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Gagal menganalisis. Pastikan server berjalan.');
+            } finally {
+                btn.disabled = false;
+                loading.style.display = 'none';
+            }
+        }
+
+        function displayResponse(data) {
+            const responseSection = document.getElementById('responseSection');
+            const urgencyBadge = document.getElementById('urgencyBadge');
+            const summary = document.getElementById('summary');
+            const placesList = document.getElementById('placesList');
+            const suggestedStep = document.getElementById('suggestedStep');
+            const callToAction = document.getElementById('callToAction');
+
+            // Set urgency badge
+            urgencyBadge.className = `badge badge-${data.urgency_level}`;
+            urgencyBadge.textContent = data.urgency_level;
+
+            // Set summary
+            summary.textContent = data.summary;
+
+            // Set places
+            placesList.innerHTML = data.recommended_places.map(place => `
+                <div class="place-card">
+                    <h4>${place.name}</h4>
+                    <div class="place-meta">
+                        <span class="meta-tag">${place.type}</span>
+                        <span class="meta-tag">📍 ${place.distance}</span>
+                    </div>
+                    <div class="actions">
+                        ${place.action === 'call' || place.contact ? `
+                            <a href="tel:${place.contact}" class="action-btn btn-call">
+                                📞 ${place.contact}
+                            </a>
+                        ` : ''}
+                        ${place.action === 'whatsapp' ? `
+                            <a href="https://wa.me/${place.contact.replace(/\D/g, '')}" class="action-btn btn-whatsapp" target="_blank">
+                                💬 WhatsApp
+                            </a>
+                        ` : ''}
+                        ${place.action === 'navigate' ? `
+                            <a href="https://www.google.com/maps/search/${encodeURIComponent(place.name)}" class="action-btn btn-navigate" target="_blank">
+                                🗺️ Navigasi
+                            </a>
+                        ` : ''}
+                    </div>
+                    <p style="margin-top: 12px; font-size: 13px; color: #64748b;">${place.note}</p>
+                </div>
+            `).join('');
+
+            // Set emergency action
+            suggestedStep.textContent = data.emergency_action.suggested_step;
+            callToAction.textContent = data.emergency_action.call_to_action;
+
+            responseSection.classList.add('visible');
+            responseSection.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Allow Enter key to submit
+        document.getElementById('userInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                analyzeEmergency();
+            }
+        });
+    </script>
+</body>
+</html>
