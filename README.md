@@ -1,126 +1,163 @@
 # VibeLocal AI 🇮🇩
 
-**Indonesian Emergency Situation Intelligence System**
+**Indonesian Emergency Situation Intelligence System** - JuaraVibeCoding Submission
 
-Sistem Klasifikasi dan Respons Darurat Lokal Indonesia yang memberikan informasi lokasi bantuan terdekat dan langkah-langkah darurat yang tepat.
+[![Live Demo](https://img.shields.io/badge/Live-Demo-green)](https://vibelocal-ai-xxxxx.a.run.app)
+[![Next.js](https://img.shields.io/badge/Next.js-14-black)](https://nextjs.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-Realtime-teal)](https://fastapi.tiangolo.com/)
+[![Google Cloud Run](https://img.shields.io/badge/Cloud-Run-blue)](https://cloud.google.com/run)
 
-## Fitur
+## 🎯 About
 
-- 📍 **Klasifikasi Cerdas** - Menganalisis input pengguna untuk mengidentifikasi jenis darurat
-- 🏥 **Lokasi Bantuan Terdekat** - Rekomendasi RS, Polsek, Damkar, dll dengan aksi call/navigate
-- 📱 **Aksi Langsung** - Tombol call, whatsapp, dan navigate untuk respons cepat
-- 🚨 **Level Urgensi** - Prioritas high/medium/low untuk penanganan yang tepat
+VibeLocal adalah **AI Emergency Assistant** yang membantu warga Indonesia mendapatkan bantuan darurat dengan cepat dan efisien. Sistem ini menganalisis situasi darurat, mengklasifikasikan urgensi, dan memberikan rekomendasi tempat terdekat yang dapat membantu.
 
-## API Endpoints
+## 🚀 Features
 
-| Endpoint | Method | Deskripsi |
-|----------|--------|-----------|
-| `/` | GET | Health check |
-| `/analyze` | POST | Analisis situasi darurat |
-| `/categories` | GET | Daftar kategori darurat |
-| `/emergency-numbers` | GET | Nomor darurat Indonesia |
+### Real-Time Emergency Intelligence
+- ✅ **AI-Powered Classification** - Deteksi otomatis kategori darurat (Medical, Vehicle, Security, Fire, dll)
+- ✅ **Smart Recommendations** - Rekomendasi tempat terdekat dengan jarak & kontak
+- ✅ **One-Click Actions** - Hubungi langsung via telepon/WhatsApp atau navigasi ke Google Maps
+- ✅ **GPS Live Tracking** - Pantau lokasi user real-time untuk responder
+- ✅ **WebSocket Chat** - Komunikasi real-time dengan tim bantuan
 
-## Contoh Request
+### Modern UI/UX
+- 🎨 **Vercel/Linear Design** - Silicon Valley-grade interface
+- 📱 **Responsive** - Works on desktop & mobile
+- 🌓 **Dark Mode** - Auto light/dark theme support
+- ✨ **Framer Motion** - Smooth animations
 
-```bash
-curl -X POST https://your-app-url/analyze \
-  -H "Content-Type: application/json" \
-  -d '{
-    "user_input": "Motor mogok di jalan raya",
-    "location": "Jl. Sudirman, Jakarta"
-  }'
+## 🏗️ Architecture
+
+```
+┌─────────────────┐      ┌──────────────────┐
+│   Next.js 14    │──────│   FastAPI        │
+│   (Frontend)    │      │   (Backend)    │
+│                 │      │                 │
+│  • Landing Page │      │  • AI Analysis  │
+│  • Dashboard    │      │  • WebSocket    │
+│  • Real-time UI │      │  • GPS Tracking │
+└─────────────────┘      └──────────────────┘
+         │                          │
+         └──────────┬─────────────┘
+                    │
+            Google Cloud Run
 ```
 
-## Response Format
+## 🛠️ Tech Stack
 
-```json
-{
-  "category": "vehicle_breakdown",
-  "urgency_level": "medium",
-  "summary": "Terdeteksi MASALAH KENDARAAN...",
-  "recommended_places": [
-    {
-      "name": "Bengkel 24 Jam Terdekat",
-      "type": "Bengkel",
-      "distance": "2km",
-      "action": "navigate",
-      "contact": "082134567890",
-      "note": "Towing dan perbaikan darurat kendaraan"
-    }
-  ],
-  "emergency_action": {
-    "suggested_step": "Aktifkan lampu hazard...",
-    "call_to_action": "Hubungi bengkel 24 jam...",
-    "share_location_message": "Kendaraan mogok! Butuh bantuan..."
-  }
-}
+### Frontend
+- [Next.js 14](https://nextjs.org/) - React Framework
+- [TailwindCSS](https://tailwindcss.com/) - Styling
+- [Framer Motion](https://www.framer.com/motion/) - Animations
+- [Lucide React](https://lucide.dev/) - Icons
+
+### Backend
+- [FastAPI](https://fastapi.tiangolo.com/) - Python API Framework
+- [WebSocket](https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API) - Real-time communication
+- [Google Cloud Run](https://cloud.google.com/run) - Serverless deployment
+
+## 📁 Project Structure
+
+```
+VibeLocalAI/
+├── nextjs-app/              # Next.js Frontend
+│   ├── app/                 # App Router (pages)
+│   │   ├── page.tsx         # Landing Page
+│   │   └── app/page.tsx     # Dashboard
+│   ├── components/          # React Components
+│   ├── Dockerfile           # Container config
+│   └── cloudbuild.yaml      # CI/CD pipeline
+│
+├── main_realtime.py         # FastAPI Backend
+├── index_realtime.html      # Static HTML fallback
+├── run_local.py            # Local dev script
+├── requirements.txt        # Python dependencies
+└── README.md               # This file
 ```
 
-## Deploy ke Google Cloud Run
+## 🚀 Getting Started
 
-### Opsi 1: Cloud Build (Git)
+### Local Development
+
+**1. Clone Repository**
+```bash
+git clone https://github.com/wi5nuu/VibeLocal-AI.git
+cd VibeLocal-AI
+```
+
+**2. Setup Backend**
+```bash
+pip install -r requirements.txt
+python run_local.py
+# Backend runs at http://localhost:8000
+```
+
+**3. Setup Frontend**
+```bash
+cd nextjs-app
+npm install
+npm run dev
+# Frontend runs at http://localhost:3000
+```
+
+**4. Open Browser**
+- Landing Page: http://localhost:3000
+- Dashboard: http://localhost:3000/app
+- API Docs: http://localhost:8000/docs
+
+### Deploy to Google Cloud Run
 
 ```bash
+cd nextjs-app
 gcloud builds submit --config cloudbuild.yaml
 ```
 
-### Opsi 2: Deploy Langsung
+## 🎥 Demo
 
+### Emergency Scenarios
+
+| Input | Category | Result |
+|-------|----------|--------|
+| `"Ban motor bocor di tol"` | Vehicle | Bengkel terdekat |
+| `"Saya pusing di kos"` | Medical | Klinik 24 jam |
+| `"Ada kebakaran"` | Fire | Pemadam kebakaran |
+| `"Maling masuk rumah"` | Security | Polisi terdekat |
+
+## 🏆 JuaraVibeCoding Submission
+
+- **Repository**: https://github.com/wi5nuu/VibeLocal-AI
+- **LinkedIn**: https://www.linkedin.com/in/wisnu-alfian-nur-ashar
+- **Hashtag**: #JuaraVibeCoding
+
+## 📝 API Endpoints
+
+### Analyze Emergency
 ```bash
-# Build container
-gcloud builds submit --tag gcr.io/PROJECT_ID/vibelocal-ai
+POST /api/analyze
+Content-Type: application/json
 
-# Deploy
-gcloud run deploy vibelocal-ai \
-  --image gcr.io/PROJECT_ID/vibelocal-ai \
-  --region asia-southeast2 \
-  --platform managed \
-  --allow-unauthenticated \
-  --port 8080
+{
+  "user_input": "Ban motor bocor",
+  "lat": -6.2088,
+  "lng": 106.8456
+}
 ```
 
-### Opsi 3: Local Build + Push
-
-```bash
-# Build Docker image
-docker build -t gcr.io/PROJECT_ID/vibelocal-ai .
-
-# Push ke GCR
-docker push gcr.io/PROJECT_ID/vibelocal-ai
-
-# Deploy
-gcloud run deploy vibelocal-ai \
-  --image gcr.io/PROJECT_ID/vibelocal-ai \
-  --region asia-southeast2 \
-  --platform managed \
-  --allow-unauthenticated
+### WebSocket Connection
+```javascript
+ws://your-domain.com/ws/{client_id}
 ```
 
-## Requirements
+## 🤝 Contributing
 
-- Google Cloud Project dengan Cloud Run API enabled
-- Google Cloud SDK (gcloud CLI)
-- Docker (opsional untuk local build)
+This project is built for #JuaraVibeCoding competition. Feel free to fork and improve!
 
-## Kategori Darurat
+## 📄 License
 
-1. **Medical Emergency** (🏥) - Sakit, cedera, kecelakaan
-2. **Security** (🚔) - Begal, copet, kejahatan
-3. **Fire** (🔥) - Kebakaran, gas bocor
-4. **Natural Disaster** (🌊) - Banjir, gempa, tsunami
-5. **Vehicle Breakdown** (🚗) - Mogok, ban bocor
-6. **Rescue** (🔍) - Tersesat, orang hilang
-
-## Nomor Darurat Indonesia
-
-- 112 - Nomor Darurat Terpadu
-- 110 - Polisi
-- 113 - Pemadam Kebakaran
-- 115 - Basarnas/SAR
-- 117 - BPBD
-- 118 - Ambulans
-- 119 - Kementerian Kesehatan
+MIT License - Free for personal and commercial use.
 
 ---
 
-**Dibuat untuk #JuaraVibeCoding 🇮🇩**
+**Built with ❤️ in Indonesia for Indonesia**
+
+🇮🇩 #JuaraVibeCoding
